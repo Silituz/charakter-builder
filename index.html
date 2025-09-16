@@ -1,0 +1,1555 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Character Prompting Builder by Silituz</title>
+    <!-- iOS PWA Tweaks -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Prompt Builder">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#6ee7b7;--muted:#9aa7b2;--glass:rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#e6eef3;background:linear-gradient(180deg,#071022 0%,#071428 100%);}    
+    .wrap{max-width:1200px;margin:16px auto;padding:18px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    header h1{margin:0;font-size:18px}
+    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+    .tab-btn{padding:8px 10px;border-radius:8px;background:#071425;border:1px solid rgba(255,255,255,0.02);color:var(--muted);cursor:pointer}
+    .tab-btn.active{background:var(--accent);color:#042022}
+    .grid{display:grid;grid-template-columns:1fr;gap:18px}
+    .card{padding-right:24px; background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);max-width:980px;margin:0 auto;}    
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    select,input[type=text],input[type=color],textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#0b1220;color:#e6eef3}
+    select option{color:#0b1220;background:#ffffff}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{display:inline-block;padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#042022;cursor:pointer}
+    .small-btn{padding:6px 8px;border-radius:8px;background:#0b1420;border:1px solid rgba(255,255,255,0.02);color:var(--muted);cursor:pointer}
+    .danger{background:#ff6b6b;color:#111}
+    .section{display:none}
+    .section.active{display:block}
+    .color-pair{display:flex;gap:6px;align-items:center}
+    .list{max-height:220px;overflow:auto;margin-top:8px}
+    .preset-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(255,255,255,0.015);margin-bottom:6px}
+    .preview{white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));padding:12px;border-radius:8px;max-height:640px;overflow:auto}
+  
+#mixLabel, #ageReadout { padding-right: 12px; }
+.wrap{ padding: 18px 18px 28px; } /* extra bottom padding */
+body{ padding-bottom: calc(env(safe-area-inset-bottom) + 16px); }
+
+
+/* --- Anti-wobble hardening --- */
+html, body { 
+  overflow-x: hidden; 
+  overscroll-behavior-x: none; 
+  touch-action: pan-y;            /* allow vertical scroll, block horizontal pan */
+}
+
+header, .tabs, .grid, .card, .wrap, .preview {
+  overflow-x: clip;               /* clip any accidental wide content */
+}
+
+.preview { 
+  word-break: break-word;         /* long JSON won't push layout wider */
+}
+
+.row { 
+  min-width: 0;                   /* allow flex rows to shrink without overflow */
+}
+
+.row > * { 
+  max-width: 100%;                /* children never exceed container width */
+}
+
+
+/* Center creator links card on all viewports */
+#creator-links-card{
+  margin-left:auto !important;
+  margin-right:auto !important;
+  width: calc(100% - 24px);
+  max-width: 560px;
+  text-align:center;
+}
+#creator-links-card .btns{ justify-content:center; }
+
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+       <img src="icons/icon-180.png" alt="App Logo" style="height:60px;width:60px;border-radius:50px;">
+      <h1>
+        Character Prompting Builder<br>
+        <span style="font-size:0.9em; font-weight:normal;">by Silituz</span>
+      </h1>
+          </header>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">I. General</button>
+      <button class="tab-btn" data-tab="body">II. Body</button>
+      <button class="tab-btn" data-tab="clothes">III. Clothes</button>
+      <button class="tab-btn" data-tab="environment">IV. Environment</button>
+      <button class="tab-btn" data-tab="generate">V. Generate</button>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div id="general" class="card section active">
+          <h3 style="margin-top:0">General</h3>
+
+          <div class="row">
+            <div style="flex:1;min-width:260px">
+              <label>Mom (country)</label>
+              <select id="mom"></select>
+            </div>
+            <div style="flex:1;min-width:260px">
+              <label>Dad (country)</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select id="dad" style="flex:1"></select>
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" id="dadSame"> same as mom</label>
+              </div>
+            </div>
+            <div style="width:180px;min-width:160px">
+              <label>Style</label>
+              <select id="style">
+                <option>Photorealistic</option>
+                <option>Anime</option>
+                <option>Comic</option>
+                <option>Painterly</option>
+                <option>Game-Art</option>
+              
+<option>Filmic</option>
+<option>Cinematic</option>
+<option>Studio Portrait</option>
+<option>Editorial</option>
+<option>Fashion Lookbook</option>
+<option>Street Style</option>
+<option>Manga</option>
+<option>Chibi</option>
+<option>Cartoon</option>
+<option>Pixar-like</option>
+<option>Cyberpunk</option>
+<option>Futuristic</option>
+<option>Vaporwave</option>
+<option>Lo‑fi</option>
+<option>Vintage</option>
+<option>Black & White</option>
+<option>Watercolor</option>
+<option>Oil Painting</option>
+<option>Ink</option>
+<option>Fantasy</option>
+<option>Medieval</option>
+<option>Samurai</option>
+<option>K‑Pop Aesthetic</option>
+<option>Sci‑Fi</option>
+<option>Horror</option>
+<option>Dark Fantasy</option>
+<option>Steampunk</option>
+<option>Baroque</option>
+<option>Minimalist</option>
+<option>High Key</option>
+<option>Low Key</option></select>
+            </div>
+          </div>
+
+          <!-- Seed & Gender row (re-added) -->
+          <!-- Appearance Mix (inserted here between parents/style and seed/gender) -->
+          <div style="margin-top:8px" class="row">
+            <div style="flex:1;min-width:320px">
+              <label>Appearance mix (Mom vs Dad)</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input id="mixMom" type="range" min="0" max="100" step="1" value="50" style="flex:1">
+                <input id="mixMomNum" type="number" min="0" max="100" step="1" value="50" style="width:72px"><div id="mixLabel" style="min-width:140px;text-align:right;font-size:12px;opacity:.8">Mom 50% · Dad 50%</div>
+              </div>
+              
+            </div>
+          </div>
+
+          
+          <div class="row" style="margin-top:12px">
+            <div style="flex:1;min-width:260px">
+              <label>Age</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input id="age" type="range" min="0" max="100" step="1" value="18" style="flex:1">
+                <div id="ageReadout" class="muted" style="min-width:180px;text-align:right;font-size:12px;opacity:.9">young adult (18)</div>
+              </div>
+            </div>
+          </div>
+<div style="margin-top:12px" class="row">
+            <div style="flex:1;min-width:200px">
+              <label>Seed</label>
+              <div style="display:flex;gap:6px"><input id="seed" type="text" placeholder="optional (keine Auto-Überschreibung)"/><button id="newSeed" class="small-btn">New</button></div>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <label>Gender</label>
+              <select id="gender"><option>Man</option><option>Woman</option><option>Divers</option></select>
+            </div>
+          </div>
+
+
+  <div style="margin-top:12px" class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Body build</label>
+              <select id="build"><option>slender</option><option>average</option><option>muscular</option><option>heavy</option>
+<option>Lean Athletic</option>
+<option>Muscular</option>
+<option>Bulky/Powerlifter</option>
+<option>Ectomorph (slim)</option>
+<option>Mesomorph (athletic)</option>
+<option>Endomorph (stocky)</option>
+<option>Tall Slim</option>
+<option>Short Compact</option>
+<option>Dad Bod</option>
+<option>Bodybuilder (cut)</option>
+<option>Bodybuilder (bulk)</option></select>
+            </div>
+            <div style="width:260px;min-width:220px">
+              <label>Skin tone (Preset)</label>
+              <select id="skinPreset"><option value="#fdebd0">Light</option><option value="#f0c8a0">Fair</option><option value="#d1a07a">Olive</option><option value="#a87954">Tan</option><option value="#6e3f2b">Brown</option><option value="#40261a">Dark</option></select>
+            </div>
+          </div>
+
+          <!-- Female multi-step proportions (moved to General) -->
+          <div id="femaleProps" style="margin-top:14px;display:none">
+            <h4 style="margin:0 0 8px 0">Female Proportions (multi-step)</h4>
+            <div class="row">
+              <div style="min-width:200px;flex:1">
+                <label>Proportions preset</label>
+                <select id="fPreset"><option>custom</option><option>petite</option><option>slim</option><option>athletic</option><option>curvy</option><option>voluptuous</option></select>
+              </div>
+              <div style="min-width:160px;flex:1">
+                <label>Bust</label>
+                <select id="fBust"><option>XS</option><option>S</option><option selected>M</option><option>L</option><option>XL</option></select>
+              </div>
+              <div style="min-width:160px;flex:1">
+                <label>Waist</label>
+                <select id="fWaist"><option>very slim</option><option>slim</option><option selected>average</option><option>wide</option></select>
+              </div>
+              <div style="min-width:160px;flex:1">
+                <label>Hips</label>
+                <select id="fHips"><option>narrow</option><option>average</option><option selected>wide</option><option>very wide</option></select>
+              </div>
+              <div style="min-width:160px;flex:1">
+                <label>Shoulders</label>
+                <select id="fShoulders"><option>narrow</option><option selected>average</option><option>broad</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px">
+            <label>Custom skin color</label>
+            <div class="color-pair"><input id="skinColor" type="color" value="#fdebd0" /><input id="skinColorText" type="text" value="#fdebd0" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+          </div>
+        </div>
+
+        <div id="body" class="card section">
+          <h3 style="margin-top:0">Body</h3>
+          <label>Hair</label>
+          <div class="row">
+            <div style="width:40%;min-width:220px">
+              <label>Hair length</label>
+              <select id="hairLength">
+  <option value="Bald">Bald</option>
+  <option value="Short">Short</option>
+  <option value="Medium">Medium</option>
+  <option value="Shoulder-length">Shoulder-length</option>
+  <option value="Long">Long</option>
+  <option value="Extra Long">Extra Long</option>
+</select>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label>Hairstyle (detailed selection)</label>
+              <select id="hairStyle" style="width:100%"></select>
+            </div>
+            <div style="width:220px;min-width:200px">
+              <label>Hair color</label>
+              <div class="color-pair"><input id="hairColor" type="color" value="#2b2b2b" style="width:66px"/><input id="hairColorText" type="text" value="#2b2b2b" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Hair attributes</label>
+            <div id="hairAttrs" style="display:flex;flex-wrap:wrap;gap:10px">
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="wet"> wet</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="dry"> dry</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="oily"> oily</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="shiny"> shiny</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="damaged"> damaged</label>
+              <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="hairAttr" value="frizzy"> frizzy</label>
+            </div>
+          </div>
+
+          <div style="margin-top:10px" class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Left eye color</label>
+              <div class="color-pair"><input id="eyeLeftColor" type="color" value="#6b8cff" /><input id="eyeLeftColorText" type="text" value="#6b8cff" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label>Right eye color</label>
+              <div class="color-pair"><input id="eyeRightColor" type="color" value="#6b8cff" /><input id="eyeRightColorText" type="text" value="#6b8cff" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Beard (for Man/Divers)</label>
+            <select id="beard"><option>none</option><option>stubble</option><option>short beard</option><option>full beard</option>
+<option>Light Stubble</option>
+<option>Medium Stubble</option>
+<option>Heavy Stubble</option>
+<option>Soul Patch</option>
+<option>Goatee</option>
+<option>Extended Goatee</option>
+<option>Van Dyke</option>
+<option>Anchor</option>
+<option>Circle Beard</option>
+<option>Balbo</option>
+<option>Short Boxed</option>
+<option>Full Beard</option>
+<option>Corporate Beard</option>
+<option>Garibaldi</option>
+<option>Verdi</option>
+<option>Ducktail</option>
+<option>Bandholz</option>
+<option>Imperial</option>
+<option>French Fork</option>
+<option>Mutton Chops</option>
+<option>Friendly Mutton Chops</option>
+<option>Chin Curtain</option>
+<option>Chin Strap</option>
+<option>Handlebar Mustache</option>
+<option>Chevron Mustache</option>
+<option>Horseshoe Mustache</option>
+<option>Pencil Mustache</option>
+<option>Walrus Mustache</option>
+<option>Hollywoodian</option></select>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Tattoos (add multiple)</label>
+            <div id="tattooList" class="list"></div>
+            <button id="addTat" class="small-btn">+ Add Tattoo</button>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Piercings (add multiple)</label>
+            <div id="piercingList" class="list"></div>
+            <button id="addPierce" class="small-btn">+ Add Piercing</button>
+          </div>
+        </div>
+
+        <div id="clothes" class="card section">
+          <h3 style="margin-top:0">Clothes</h3>
+          <div class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Top</label>
+              <select id="top"><option>Leather jacket</option><option>Casual tee</option><option>Hoodie</option><option>Kimono jacket</option><option>Formal shirt</option><option>Blazer</option><option>Tank top</option><option>Crop top</option><option>Coat</option></select>
+              <label style="margin-top:6px">Top color</label>
+              <div class="color-pair"><input id="topColor" type="color" value="#222222" /><input id="topColorText" type="text" value="#222222" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label>Bottom</label>
+              <select id="bottom"><option>Jeans</option><option>Skirt</option><option>Trousers</option><option>Shorts</option><option>Leggings</option><option>Joggers</option><option>Suit pants</option></select>
+              <label style="margin-top:6px">Bottom color</label>
+              <div class="color-pair"><input id="bottomColor" type="color" value="#1a1a1a" /><input id="bottomColorText" type="text" value="#1a1a1a" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Shoes</label>
+              <select id="shoes"><option>Boots</option><option>Sneakers</option><option>Sandals</option><option>Dress shoes</option><option>High heels</option><option>Combat boots</option></select>
+              <label style="margin-top:6px">Shoes color</label>
+              <div class="color-pair"><input id="shoesColor" type="color" value="#2b2b2b" /><input id="shoesColorText" type="text" value="#2b2b2b" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+            <div style="width:220px;min-width:200px">
+              <label>Socks</label>
+              <select id="socks"><option>none</option><option>short</option><option>mid</option><option>long</option></select>
+              <label style="margin-top:6px">Socks color</label>
+              <div class="color-pair"><input id="socksColor" type="color" value="#222222" /><input id="socksColorText" type="text" value="#222222" placeholder="#rrggbb" style="width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)"/></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Accessories (up to 3)</label>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              <select id="accessory1"><option>None</option><option>Necklace</option><option>Glasses</option><option>Backpack</option><option>Scarf</option><option>Hat</option><option>Watch</option><option>Ring</option></select>
+              <select id="accessory2"><option>None</option><option>Necklace</option><option>Glasses</option><option>Backpack</option><option>Scarf</option><option>Hat</option><option>Watch</option><option>Ring</option></select>
+              <select id="accessory3"><option>None</option><option>Necklace</option><option>Glasses</option><option>Backpack</option><option>Scarf</option><option>Hat</option><option>Watch</option><option>Ring</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div id="environment" class="card section">
+          <h3 style="margin-top:0">Environment</h3>
+          <div class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Facial expression</label>
+              <select id="expression"><option>neutral</option><option>smiling</option><option>angry</option><option>shouting</option><option>happy</option><option>laughing</option>
+<option>Neutral</option>
+<option>Soft Smile</option>
+<option>Big Smile</option>
+<option>Grin</option>
+<option>Smirk</option>
+<option>Laughing (Open Mouth)</option>
+<option>Serious</option>
+<option>Focused</option>
+<option>Determined</option>
+<option>Confident</option>
+<option>Shy</option>
+<option>Surprised</option>
+<option>Shocked</option>
+<option>Fearful</option>
+<option>Angry</option>
+<option>Disgusted</option>
+<option>Sad</option>
+<option>Crying (Tears)</option>
+<option>Pouting</option>
+<option>Frown</option>
+<option>Wink</option>
+<option>Blush</option>
+<option>Embarrassed</option>
+<option>Sleepy</option>
+<option>Yawn</option>
+<option>Bored</option>
+<option>Thinking</option>
+<option>Mischievous</option>
+<option>Smug</option>
+<option>Pain</option>
+<option>Scream</option></select>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label>Pose</label>
+              <select id="pose"><option>Standing, 3/4</option><option>Sitting, relaxed</option><option>Action (jump)</option><option>Looking over shoulder</option><option>Casual hand-on-hip</option>
+<option>Standing</option>
+<option>Sitting (Chair)</option>
+<option>Sitting (Floor)</option>
+<option>Leaning on Wall</option>
+<option>Hands in Pockets</option>
+<option>Arms Crossed</option>
+<option>Hand on Hip</option>
+<option>Peace Sign</option>
+<option>Over-the-shoulder Look</option>
+<option>Profile View</option>
+<option>Three-Quarter View</option>
+<option>Close-up Portrait</option>
+<option>Full Body</option>
+<option>Walking</option>
+<option>Running</option>
+<option>Jumping</option>
+<option>Mid-turn (Hair Flip)</option>
+<option>Power Pose</option>
+<option>Victory Pose</option>
+<option>Salute</option>
+<option>Hand Heart</option>
+<option>Finger Gun</option>
+<option>Reaching Out</option>
+<option>Holding Object (Sword)</option>
+<option>Holding Microphone</option>
+<option>Action Stance (Samurai)</option>
+<option>Boxing Guard</option>
+<option>High Kick</option>
+<option>Kneeling</option>
+<option>Crouching</option>
+<option>Crossed Legs (Seated)</option>
+<option>Lying on Side</option>
+<option>Dancing Spin</option>
+<option>Back Turn Look</option></select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="row">
+            <div style="flex:1;min-width:220px">
+              <label>Camera</label>
+              <select id="camera"><option>Full-body, 35mm</option><option>Portrait, 85mm</option><option>Low angle, 35mm</option><option>High angle, 85mm</option><option>Waist-up, 50mm</option>
+<option>Eye Level</option>
+<option>Low Angle</option>
+<option>High Angle</option>
+<option>Bird's Eye</option>
+<option>Worm's Eye</option>
+<option>Dutch Angle</option>
+<option>Extreme Close-up</option>
+<option>Close-up (50mm)</option>
+<option>Medium Shot (35mm)</option>
+<option>Portrait (85mm)</option>
+<option>Telephoto (135mm)</option>
+<option>Telephoto (200mm)</option>
+<option>Wide (24mm)</option>
+<option>Ultra Wide (16mm)</option>
+<option>Fisheye</option>
+<option>Over-the-Shoulder (OTS)</option>
+<option>Point of View (POV)</option>
+<option>Macro</option>
+<option>Overhead</option>
+<option>Long Shot</option>
+<option>Full Shot</option>
+<option>Drone Shot</option>
+<option>Gimbal Tracking</option>
+<option>Dolly Zoom</option></select>
+            </div>
+            <div style="flex:1;min-width:220px">
+              <label>Mood / Lighting</label>
+              <select id="mood"><option>Neutral soft</option><option>Moody cinematic</option><option>Bright sunny</option><option>Neon night</option>
+<option>Natural Daylight</option>
+<option>Golden Hour Warm</option>
+<option>Blue Hour Cool</option>
+<option>Overcast Soft Light</option>
+<option>Harsh Noon Light</option>
+<option>Backlit Glow</option>
+<option>Rim Light</option>
+<option>Silhouette</option>
+<option>Volumetric Fog / God Rays</option>
+<option>Moody Shadows</option>
+<option>High Key Bright</option>
+<option>Low Key Dramatic</option>
+<option>Rembrandt Lighting</option>
+<option>Split Lighting</option>
+<option>Loop Lighting</option>
+<option>Butterfly / Paramount</option>
+<option>Clamshell Beauty</option>
+<option>Studio Softbox</option>
+<option>Beauty Dish</option>
+<option>Ring Light</option>
+<option>Colored Gels (Red/Blue)</option>
+<option>Neon Night (Magenta/Teal)</option>
+<option>Firelight</option>
+<option>Candlelight</option>
+<option>Moonlight</option>
+<option>Starry Night</option>
+<option>Storm Lightning</option>
+<option>Rain Reflections</option>
+<option>Film Grain</option>
+<option>Bloom</option>
+<option>Lens Flare</option>
+<option>Anamorphic Flare</option>
+<option>Bokeh Heavy</option></select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label>Prompt purpose</label>
+            <select id="purpose"><option>Character only</option><option>Character + Background</option><option>Full prompt (API optimized)</option></select>
+          </div>
+
+          <div id="backgroundOptions" style="margin-top:10px;display:none">
+            <label>Background preset or custom</label>
+            <select id="bgPreset"><option>Urban night</option><option>Studio portrait</option><option>Forest clearing</option><option>Fantasy castle</option><option>Seaside dusk</option><option>Cyberpunk neon city</option><option>Custom</option></select>
+            <div id="bgCustomWrap" style="margin-top:8px;display:none">
+              <label>Custom background text</label>
+              <input id="bgCustom" type="text" placeholder="Describe the background you want" />
+            </div>
+          </div>
+
+          <div id="actionOptions" style="margin-top:10px;display:none">
+            <label>Action / Scene (for Full prompt)</label>
+            <textarea id="actionText" rows="3" placeholder="Describe what the character does or what happens in the scene (e.g. 'running through a rainy street, shouting at the sky')"></textarea>
+          </div>
+
+          <div style="margin-top:10px">
+            <label>Negative prompts (optional)</label>
+            <input id="negative" type="text" placeholder="no text, no watermark, no extra limbs" />
+          </div>
+        </div>
+
+        <div id="generate" class="card section">
+          <h3 style="margin-top:0">Generate</h3>
+          <div style="margin-bottom:8px">Review settings and click Generate to produce the prompt JSON.</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <button id="genBtn" class="btn">Generate Prompt</button>
+            <button id="copyBtn" class="small-btn">Copy</button>
+            <button id="exportBtn" class="small-btn">Export JSON</button>
+          </div>
+
+          <div>
+            <label>Generated Prompt (JSON)</label>
+            <div id="promptPreview" class="preview">(nothing generated yet)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Helper utilities
+    const $ = id=>document.getElementById(id);
+    const el = (tag, attrs={}, children=[])=>{const e=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>{if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else e.setAttribute(k,v)});children.forEach(c=>e.appendChild(c));return e}
+    function uid(len=6){return Math.random().toString(36).slice(2,2+len)}
+    function download(filename, content){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'application/json'}));a.download=filename;document.body.appendChild(a);a.click();a.remove()}
+    function copyToClipboard(text){navigator.clipboard?.writeText(text).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()})}
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      const tab = b.getAttribute('data-tab');
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+    }));
+
+    // State
+    const state = {tattoos:[],piercings:[],presets:{}}
+
+    // Countries options (includes None + Other)
+    const COUNTRY_LIST = [
+  ['Afghanistan','AF'],['Albania','AL'],['Algeria','DZ'],['Andorra','AD'],['Angola','AO'],['Antigua and Barbuda','AG'],['Argentina','AR'],['Armenia','AM'],['Australia','AU'],['Austria','AT'],['Azerbaijan','AZ'],['Bahamas','BS'],['Bahrain','BH'],['Bangladesh','BD'],['Barbados','BB'],['Belarus','BY'],['Belgium','BE'],['Belize','BZ'],['Benin','BJ'],['Bhutan','BT'],['Bolivia','BO'],['Bosnia and Herzegovina','BA'],['Botswana','BW'],['Brazil','BR'],['Brunei','BN'],['Bulgaria','BG'],['Burkina Faso','BF'],['Burundi','BI'],['Cabo Verde','CV'],['Cambodia','KH'],['Cameroon','CM'],['Canada','CA'],['Central African Republic','CF'],['Chad','TD'],['Chile','CL'],['China','CN'],['Colombia','CO'],['Comoros','KM'],['Congo (Brazzaville)','CG'],['Costa Rica','CR'],["Côte d'Ivoire",'CI'],['Croatia','HR'],['Cuba','CU'],['Cyprus','CY'],['Czechia','CZ'],['Democratic Republic of the Congo','CD'],['Denmark','DK'],['Djibouti','DJ'],['Dominica','DM'],['Dominican Republic','DO'],['Ecuador','EC'],['Egypt','EG'],['El Salvador','SV'],['Equatorial Guinea','GQ'],['Eritrea','ER'],['Estonia','EE'],['Eswatini','SZ'],['Ethiopia','ET'],['Fiji','FJ'],['Finland','FI'],['France','FR'],['Gabon','GA'],['Gambia','GM'],['Georgia','GE'],['Germany','DE'],['Ghana','GH'],['Greece','GR'],['Grenada','GD'],['Guatemala','GT'],['Guinea','GN'],['Guinea-Bissau','GW'],['Guyana','GY'],['Haiti','HT'],['Honduras','HN'],['Hungary','HU'],['Iceland','IS'],['India','IN'],['Indonesia','ID'],['Iran','IR'],['Iraq','IQ'],['Ireland','IE'],['Israel','IL'],['Italy','IT'],['Jamaica','JM'],['Japan','JP'],['Jordan','JO'],['Kazakhstan','KZ'],['Kenya','KE'],['Kiribati','KI'],['Kuwait','KW'],['Kyrgyzstan','KG'],['Laos','LA'],['Latvia','LV'],['Lebanon','LB'],['Lesotho','LS'],['Liberia','LR'],['Libya','LY'],['Liechtenstein','LI'],['Lithuania','LT'],['Luxembourg','LU'],['Madagascar','MG'],['Malawi','MW'],['Malaysia','MY'],['Maldives','MV'],['Mali','ML'],['Malta','MT'],['Marshall Islands','MH'],['Mauritania','MR'],['Mauritius','MU'],['Mexico','MX'],['Micronesia','FM'],['Moldova','MD'],['Monaco','MC'],['Mongolia','MN'],['Montenegro','ME'],['Morocco','MA'],['Mozambique','MZ'],['Myanmar','MM'],['Namibia','NA'],['Nauru','NR'],['Nepal','NP'],['Netherlands','NL'],['New Zealand','NZ'],['Nicaragua','NI'],['Niger','NE'],['Nigeria','NG'],['North Korea','KP'],['North Macedonia','MK'],['Norway','NO'],['Oman','OM'],['Pakistan','PK'],['Palau','PW'],['Panama','PA'],['Papua New Guinea','PG'],['Paraguay','PY'],['Peru','PE'],['Philippines','PH'],['Poland','PL'],['Portugal','PT'],['Qatar','QA'],['Romania','RO'],['Russia','RU'],['Rwanda','RW'],['Saint Kitts and Nevis','KN'],['Saint Lucia','LC'],['Saint Vincent and the Grenadines','VC'],['Samoa','WS'],['San Marino','SM'],['Sao Tome and Principe','ST'],['Saudi Arabia','SA'],['Senegal','SN'],['Serbia','RS'],['Seychelles','SC'],['Sierra Leone','SL'],['Singapore','SG'],['Slovakia','SK'],['Slovenia','SI'],['Solomon Islands','SB'],['Somalia','SO'],['South Africa','ZA'],['South Korea','KR'],['South Sudan','SS'],['Spain','ES'],['Sri Lanka','LK'],['Sudan','SD'],['Suriname','SR'],['Sweden','SE'],['Switzerland','CH'],['Syria','SY'],['Tajikistan','TJ'],['Tanzania','TZ'],['Thailand','TH'],['Timor-Leste','TL'],['Togo','TG'],['Tonga','TO'],['Trinidad and Tobago','TT'],['Tunisia','TN'],['Turkey','TR'],['Turkmenistan','TM'],['Tuvalu','TV'],['Uganda','UG'],['Ukraine','UA'],['United Arab Emirates','AE'],['United Kingdom','GB'],['United States','US'],['Uruguay','UY'],['Uzbekistan','UZ'],['Vanuatu','VU'],['Vatican City','VA'],['Venezuela','VE'],['Vietnam','VN'],['Yemen','YE'],['Zambia','ZM'],['Zimbabwe','ZW']
+];
+
+    // Parents init + same-as-mom checkbox behavior
+    (function initParents(){
+      const momEl = $('mom'), dadEl = $('dad'), same = $('dadSame');
+
+      function flagEmoji(code){
+        if(!code) return '';
+        return code.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+      }
+      function populate(sel){
+        if(!sel) return;
+        sel.innerHTML='';
+        // None on top
+        const noneOpt = document.createElement('option');
+        noneOpt.value = 'None';
+        noneOpt.textContent = '— None';
+        sel.appendChild(noneOpt);
+        // Countries
+        COUNTRY_LIST.forEach(([name,code])=>{
+          const o = document.createElement('option');
+          o.value = name;
+          o.textContent = `${flagEmoji(code)} ${name}`;
+          sel.appendChild(o);
+        });
+        // Other at bottom
+        const otherOpt = document.createElement('option');
+        otherOpt.value = 'Other';
+        otherOpt.textContent = '🏳️ Other';
+        sel.appendChild(otherOpt);
+      }
+
+      populate(momEl); populate(dadEl);
+
+      if(same){
+        same.addEventListener('change', ()=>{
+          if(!dadEl || !momEl) return;
+          dadEl.disabled = same.checked;
+          if(same.checked){ dadEl.value = momEl.value; }
+        });
+      }
+      if(momEl){
+        momEl.addEventListener('change', ()=>{
+          if(same && same.checked && dadEl){ dadEl.value = momEl.value; }
+        });
+      }
+    })();
+
+    // Cleanup stray duplicates in non-General sections
+    function cleanupGeneralDuplicates(){
+      const general = $('general'); if(!general) return;
+      const ids = ['mixMom','mixMomNum','mixLabel','build','skinPreset','skinColor','skinColorText'];
+      ids.forEach(id=>{
+        document.querySelectorAll('#'+id).forEach(el=>{
+          if(!general.contains(el)){
+            const box = el.closest('.row') || el.closest('div');
+            if(box && box.closest('.section') && box.closest('.section').id!=='general'){
+              box.remove();
+            }
+          }
+        })
+      })
+    }
+    cleanupGeneralDuplicates();
+
+    // seed
+    $('newSeed').addEventListener('click',()=>{$('seed').value = Math.floor(Math.random()*1e9).toString()})
+
+    // dynamic UI for background/action
+    $('purpose').addEventListener('change',()=>{
+      const v = $('purpose').value;
+      $('backgroundOptions').style.display = (v==='Character + Background')? 'block':'none';
+      $('actionOptions').style.display = (v==='Full prompt (API optimized)')? 'block':'none';
+    })
+    $('bgPreset').addEventListener('change',()=>{const v=$('bgPreset').value;$('bgCustomWrap').style.display = (v==='Custom')? 'block':'none'})
+
+    // Female props visibility toggle
+    function refreshFemaleProps(){
+      const isW = $('gender').value==='Woman';
+      if($('femaleProps')) $('femaleProps').style.display = isW? 'block':'none';
+      if($('build')) $('build').disabled = isW; // ignore Body build when Woman
+      if(isW){ applyFemalePresetBehavior && applyFemalePresetBehavior(); }
+    }
+    $('gender').addEventListener('change', refreshFemaleProps); refreshFemaleProps();
+
+    // Female presets auto-apply (predefined values when preset != custom)
+    const FEMALE_PRESET_MAP = {
+      petite:{bust:'S',waist:'slim',hips:'narrow',shoulders:'narrow'},
+      slim:{bust:'S',waist:'very slim',hips:'average',shoulders:'narrow'},
+      athletic:{bust:'M',waist:'slim',hips:'average',shoulders:'broad'},
+      curvy:{bust:'L',waist:'slim',hips:'wide',shoulders:'average'},
+      voluptuous:{bust:'XL',waist:'average',hips:'very wide',shoulders:'average'}
+    };
+
+    function setFemaleFields(vals){
+      if(!vals) return;
+      if($('fBust')) $('fBust').value = vals.bust;
+      if($('fWaist')) $('fWaist').value = vals.waist;
+      if($('fHips')) $('fHips').value = vals.hips;
+      if($('fShoulders')) $('fShoulders').value = vals.shoulders;
+    }
+
+    function toggleFemaleFieldsDisabled(disabled){
+      ['fBust','fWaist','fHips','fShoulders'].forEach(id=>{ if($(id)) $(id).disabled = disabled; });
+    }
+
+    function onFemalePresetChange(){
+      const preset = $('fPreset').value;
+      if(preset==='custom'){
+        toggleFemaleFieldsDisabled(false);
+        return;
+      }
+      const vals = FEMALE_PRESET_MAP[preset];
+      setFemaleFields(vals);
+      toggleFemaleFieldsDisabled(true);
+    }
+
+    function applyFemalePresetBehavior(){
+      if($('fPreset') && !$('fPreset').dataset.bound){
+        $('fPreset').addEventListener('change', onFemalePresetChange);
+        $('fPreset').dataset.bound = '1';
+      }
+      onFemalePresetChange();
+    }
+
+    // initialize once on load as well
+    applyFemalePresetBehavior();
+
+    // Tattoo & Piercing UI
+    function renderTattoo(t){
+      const wrap = el('div',{class:'preset-item'});
+      const left = el('div',{},[]);
+      left.appendChild(el('div',{html:`<strong>${t.desc||'Tattoo'}</strong><div class="muted" style="font-size:12px">${t.style||''} — ${t.position||''}</div>`}));
+      const right = el('div',{},[]);
+      const del = el('button',{class:'small-btn'}); del.textContent='Remove'; del.addEventListener('click',()=>{state.tattoos = state.tattoos.filter(x=>x.id!==t.id);refreshLists()});
+      right.appendChild(del);
+      wrap.appendChild(left);wrap.appendChild(right);
+      return wrap
+    }
+    function renderPierce(p){const wrap=el('div',{class:'preset-item'});wrap.appendChild(el('div',{html:`<strong>${p.type}</strong><div class="muted" style="font-size:12px">${p.position} — ${p.material||''}</div>`}));const del=el('button',{class:'small-btn'});del.textContent='Remove';del.addEventListener('click',()=>{state.piercings=state.piercings.filter(x=>x.id!==p.id);refreshLists()});wrap.appendChild(del);return wrap}
+
+    function refreshLists(){
+      const tL=$('tattooList');tL.innerHTML='';state.tattoos.forEach(t=>tL.appendChild(renderTattoo(t)));
+      const pL=$('piercingList');pL.innerHTML='';state.piercings.forEach(p=>pL.appendChild(renderPierce(p)));
+    }
+
+    $('addTat').addEventListener('click',()=>{
+      const id = uid();
+      const popup = document.createElement('div');popup.style.padding='12px';popup.style.marginTop='8px';popup.style.background='rgba(255,255,255,0.01)';popup.style.borderRadius='8px';
+      const desc = el('input',{type:'text',placeholder:'Description (e.g., small swallow)'});
+      const style = el('input',{type:'text',placeholder:'Style (linework, watercolor)'});
+      const position = el('input',{type:'text',placeholder:'Position (e.g., right forearm)'});
+      const color = el('input',{type:'color',value:'#000000'});
+      const colorText = el('input',{type:'text',value:'#000000',placeholder:'#rrggbb',style:'width:96px;border-radius:6px;padding:6px;background:#071022;color:#e6eef3;border:1px solid rgba(255,255,255,0.04)'});
+      const add = el('button',{class:'btn'});add.textContent='Add';
+      color.addEventListener('input',()=>{ colorText.value = color.value; });
+      colorText.addEventListener('input',()=>{ if(/^#([0-9a-fA-F]{6})$/.test(colorText.value)) color.value = colorText.value; });
+      add.addEventListener('click',async()=>{
+        const t = {id,desc:desc.value,style:style.value,position:position.value,color:color.value,img:''};
+        state.tattoos.push(t);refreshLists();popup.remove();
+      });
+      const cancel = el('button',{class:'small-btn'});cancel.textContent='Cancel';cancel.addEventListener('click',()=>popup.remove());
+      popup.appendChild(desc);popup.appendChild(style);popup.appendChild(position);popup.appendChild(color);popup.appendChild(colorText);popup.appendChild(el('div',{html:'<br>'}));popup.appendChild(add);popup.appendChild(cancel);
+      $('tattooList').appendChild(popup);
+    })
+
+    $('addPierce').addEventListener('click',()=>{
+      const id = uid();
+      const popup = document.createElement('div');popup.style.padding='12px';popup.style.marginTop='8px';popup.style.background='rgba(255,255,255,0.01)';popup.style.borderRadius='8px';
+      const type = el('select',{},[]);['Ring','Spike','Stud','Hoop'].forEach(o=>type.appendChild(el('option',{value:o,html:o})));
+      const pos = el('input',{type:'text',placeholder:'Position (e.g., nose, left ear)'});
+      const material = el('input',{type:'text',placeholder:'Material / color (silver)'});
+      const add = el('button',{class:'btn'});add.textContent='Add';add.addEventListener('click',()=>{state.piercings.push({id,type:type.value,position:pos.value,material:material.value});refreshLists();popup.remove()});
+      const cancel = el('button',{class:'small-btn'});cancel.textContent='Cancel';cancel.addEventListener('click',()=>popup.remove());
+      popup.appendChild(type);popup.appendChild(pos);popup.appendChild(material);popup.appendChild(el('div',{html:'<br>'}));popup.appendChild(add);popup.appendChild(cancel);
+      $('piercingList').appendChild(popup);
+    })
+
+    // Hair styles mapping
+    const HAIR_MAP = {
+      bald: ['Clean shaven'],
+      short: ['Buzzcut','Crew cut','Short messy','Short fringe'],
+      medium: ['Layered medium','Wavy medium','Side-part medium','Curtain bangs medium'],
+      shoulder: ['Shoulder-length wavy','Shoulder-length straight','Ponytail shoulder'],
+      long: ['Long straight','Long wavy','Braided long','Loose curls','Top knot']
+    };
+    function populateHairStyles(){
+      const sel = $('hairStyle'); sel.innerHTML='';
+      const len = $('hairLength').value || 'medium';
+      (HAIR_MAP[len]||[]).forEach(opt=>{const o=document.createElement('option');o.value=opt;o.textContent=opt;sel.appendChild(o)});
+    }
+    $('hairLength').addEventListener('change',populateHairStyles); populateHairStyles();
+
+    // Background presets descriptions
+    const BG_SUGGESTIONS = {
+      'Urban night':'A neon-lit city street with wet pavement and bokeh lights',
+      'Studio portrait':'A simple studio backdrop with softbox lighting and subtle vignette',
+      'Forest clearing':'A sun-dappled forest clearing with soft mist',
+      'Fantasy castle':'A distant castle on a cliff with dramatic clouds',
+      'Seaside dusk':'A calm seaside at dusk with warm colors and gentle waves',
+      'Cyberpunk neon city':'Futuristic neon skyline with holographic signs and rain'
+    }
+
+    // wire color pairs
+    function wireColorPair(id){
+      const c = $(id); const t = $(id+'Text');
+      if(!c || !t) return;
+      c.addEventListener('input',()=>{ t.value = c.value; });
+      t.addEventListener('input',()=>{ if(/^#([0-9a-fA-F]{6})$/.test(t.value)){ c.value = t.value; } });
+    }
+    ['skinColor','hairColor','eyeLeftColor','eyeRightColor','topColor','bottomColor','shoesColor','socksColor'].forEach(wireColorPair);
+
+    
+    // ---- Age slider (auto category) ----
+    (function(){
+      const ageEl = $('age');
+      const out = $('ageReadout');
+      if(!ageEl || !out) return;
+      function catFromAge(n){
+        if(n<=1) return 'infant';
+        if(n<=3) return 'toddler';
+        if(n<=12) return 'child';
+        if(n<=17) return 'teen';
+        if(n<=24) return 'young adult';
+        if(n<=44) return 'adult';
+        if(n<=64) return 'middle-aged';
+        return 'senior';
+      }
+      function sync(){
+        let v = parseInt(ageEl.value||'18',10);
+        if(isNaN(v)) v = 18;
+        v = Math.max(0, Math.min(100, v));
+        out.textContent = catFromAge(v) + ' (' + v + ')';
+      }
+      ageEl.addEventListener('input', sync);
+      sync();
+      // expose for later use (non-intrusive)
+      window.getAge = function(){
+        const v = parseInt((ageEl && ageEl.value) || '18',10);
+        const vv = isNaN(v) ? 18 : Math.max(0, Math.min(100, v));
+        const cat = (function(n){
+          if(n<=1) return 'infant';
+          if(n<=3) return 'toddler';
+          if(n<=12) return 'child';
+          if(n<=17) return 'teen';
+          if(n<=24) return 'young adult';
+          if(n<=44) return 'adult';
+          if(n<=64) return 'middle-aged';
+          return 'senior';
+        })(vv);
+        return { age: vv, category: cat };
+      };
+    })();
+
+
+// Generate Prompt
+    function generatePrompt(){
+      const s = $('style').value;
+      const mom = $('mom').value;
+      const dad = $('dad').value;
+      const mixM = parseInt(($('mixMom') && $('mixMom').value) || '50');
+      const mixD = 100 - mixM;
+      const hairAttrs = (typeof getHairAttrs==='function') ? getHairAttrs() : [];
+      const gender = $('gender').value;
+      const build = $('build').value;
+      const skin = $('skinColor').value;
+      const hairLength = $('hairLength').value;
+      const hairStyle = $('hairStyle').value;
+      const hair = hairLength + ' - ' + hairStyle + ' ('+$('hairColor').value+')';
+      const eyesLeft = $('eyeLeftColor').value; const eyesRight = $('eyeRightColor').value;
+      const beard = $('beard').value;
+      const expression = $('expression').value;
+      const top = $('top').value; const topColor = $('topColor').value;
+      const bottom = $('bottom').value; const bottomColor = $('bottomColor').value;
+      const shoes = $('shoes').value; const shoesColor = $('shoesColor').value;
+      const socks = $('socks').value; const socksColor = $('socksColor').value;
+      const accessories = [$('accessory1').value, $('accessory2').value, $('accessory3').value].filter(a=>a && a!=='None');
+      const pose = $('pose').value; const camera = $('camera').value; const mood = $('mood').value;
+      const purpose = $('purpose').value; const negative = $('negative').value;
+      const seed = $('seed').value || Math.floor(Math.random()*1e9).toString();
+
+      // origin / cultural cues (parents: mom & dad)
+      const cues = {
+        'Japan':'modern Tokyo streetwear, subtle kimono motifs, clean aesthetic',
+        'Germany':'casual European street fashion, neutral palette',
+        'United States':'diverse modern fashion; urban streetwear to business casual',
+        'South Korea':'K-fashion influences, layered street style',
+        'United Kingdom':'smart-casual, classic outerwear accents',
+        'Brazil':'vibrant colors, relaxed beach influences',
+        'India':'colorful textiles, intricate patterns',
+        'France':'chic minimalism, tailored pieces',
+        'Italy':'fashionable tailoring, refined textures',
+        'Spain':'warm palettes, expressive styling'
+      };
+      const momCue = cues[mom] || '';
+      const dadCue = cues[dad] || '';
+
+      // Build description list
+      let desc = [];
+      const heritageParts = [];
+      if(mom && mom!=='None') heritageParts.push(`mother ${mom}`);
+      if(dad && dad!=='None') heritageParts.push(`father ${dad}`);
+      desc.push(`heritage: ${heritageParts.join(', ') || 'unspecified'}`);
+      const cueParts = [];
+      if(momCue) cueParts.push(`mother cues: ${momCue}`);
+      if(dadCue && dad!==mom) cueParts.push(`father cues: ${dadCue}`);
+      if(cueParts.length) desc.push('cultural cues: ' + cueParts.join(' | '));
+      if(mom && dad && mom!=='None' && dad!=='None' && mom!==dad) desc.push('mixed features blending maternal and paternal traits');
+      desc.push(`appearance mix: ${mixM}% maternal, ${mixD}% paternal`);
+
+      if(gender==='Woman') { desc.push(`${gender.toLowerCase()}`); } else { desc.push(`${gender.toLowerCase()}, ${build} build`); }
+      desc.push(`skin tone: ${skin}`);
+      desc.push(`hair: ${hair}`);
+      if(hairAttrs && hairAttrs.length) desc.push('hair attributes: ' + hairAttrs.join(', '));
+      desc.push(`eyes: left ${eyesLeft}, right ${eyesRight}`);
+      desc.push(`expression: ${expression}`);
+      if(beard && beard!=='none') desc.push(`facial hair: ${beard}`);
+
+      // female proportions details
+      if(gender==='Woman'){
+        const fp = {preset:$('fPreset').value,bust:$('fBust').value,waist:$('fWaist').value,hips:$('fHips').value,shoulders:$('fShoulders').value};
+        const fpText = `female proportions: preset ${fp.preset}, bust ${fp.bust}, waist ${fp.waist}, hips ${fp.hips}, shoulders ${fp.shoulders}`;
+        desc.push(fpText);
+      }
+
+      desc.push(`clothing: ${top} (color ${topColor}), ${bottom} (color ${bottomColor}), ${shoes} (color ${shoesColor}), socks: ${socks} (color ${socksColor})`);
+      if(accessories.length) desc.push(`accessories: ${accessories.join(', ')}`);
+
+      if(state.tattoos.length) {
+        const ttxt = state.tattoos.map(t=>`${t.desc||'tattoo'} (${t.style||'style'}) on ${t.position||'unknown'}${t.color?`, color ${t.color}`:''}`).join('; ');
+        desc.push('tattoos: '+ttxt);
+      }
+      if(state.piercings.length){desc.push('piercings: '+state.piercings.map(p=>`${p.type} @ ${p.position}`).join('; '))}
+
+      // background handling
+      let bgText = '';
+      if(purpose==='Character + Background'){
+        const preset = $('bgPreset').value;
+        if(preset==='Custom') bgText = $('bgCustom').value || '';
+        else bgText = BG_SUGGESTIONS[preset] || preset;
+      }
+
+      // action handling for Full prompt
+      let actionText = '';
+      if(purpose==='Full prompt (API optimized)'){
+        actionText = $('actionText').value || '';
+      }
+
+      // style-specific adjectives
+      let styleAdjs='';
+      if(s==='Photorealistic') styleAdjs='ultra-detailed, photorealistic, 8k, filmic lighting, realistic skin texture';
+      if(s==='Anime') styleAdjs='anime style, cel-shading, vibrant colors, clean lineart, large expressive eyes';
+      if(s==='Comic') styleAdjs='comic-book style, thick outlines, halftone shading, bold colors';
+      if(s==='Painterly') styleAdjs='painterly brushstrokes, soft edges, textured canvas feel';
+      if(s==='Game-Art') styleAdjs='game-art, stylized, detailed outfit, rim lighting';
+
+      // assemble prompt depending on purpose
+      let mainPrompt = '';
+      if(purpose==='Character only'){
+        mainPrompt = `${styleAdjs}. Portrait of: ${desc.join(', ')}. Pose: ${pose}. Camera: ${camera}. Mood: ${mood}. Seed: ${seed}.`;
+      } else if(purpose==='Character + Background'){
+        mainPrompt = `${styleAdjs}. Full scene of: ${desc.join(', ')}. Background: ${bgText || 'neutral background'}. Pose: ${pose}. Camera: ${camera}. Mood: ${mood}. Seed: ${seed}.`;
+      } else { // Full prompt
+        let scene = '';
+        if(actionText) scene += actionText + '. ';
+        if(bgText) scene += 'Background: '+bgText + '. ';
+        mainPrompt = `${styleAdjs}. ${scene}Character: ${desc.join(', ')}. Pose: ${pose}. Camera: ${camera}. Mood: ${mood}. Seed: ${seed}.`;
+      }
+
+      if(negative) mainPrompt += ` Negative: ${negative}.`;
+
+      const metadata = {style:s,mother:mom,father:dad, mix:{mom:mixM,dad:mixD},gender,build,skin,hairLength,hairStyle,hairColor:$('hairColor').value, hairAttributes:hairAttrs,eyesLeft,eyesRight,expression,beard,top,topColor,bottom,bottomColor,shoes,shoesColor,socks,socksColor,accessories,pose,camera,mood,purpose,negative,tattoos:state.tattoos,piercings:state.piercings,femaleProps: (gender==='Woman'?{preset:$('fPreset').value,bust:$('fBust').value,waist:$('fWaist').value,hips:$('fHips').value,shoulders:$('fShoulders').value}:null)};
+      return {prompt: mainPrompt.trim(), seed, metadata, background: bgText, action: actionText}
+    }
+
+    // Mix controls (slider + number + label)
+    function updateMixLabel(){
+      const r = $('mixMom'); const n = $('mixMomNum');
+      if(!r || !n) return;
+      let m = parseInt(r.value || '50'); if(isNaN(m)) m = 50; if(m<0) m=0; if(m>100) m=100;
+      const d = 100 - m;
+      if($('mixLabel')) $('mixLabel').textContent = `Mom ${m}% · Dad ${d}%`;
+      n.value = m;
+    }
+    function bindMix(){
+      const r = $('mixMom'); const n = $('mixMomNum'); const same = $('dadSame');
+      if(!r || !n) return;
+      r.addEventListener('input', updateMixLabel);
+      n.addEventListener('input', ()=>{ let v = parseInt(n.value||'0'); if(isNaN(v)) v=0; v=Math.max(0,Math.min(100,v)); r.value = String(v); updateMixLabel();});
+      updateMixLabel();
+      if(same){
+        if(!r.dataset.prev) r.dataset.prev = r.value || '50';
+        same.addEventListener('change', ()=>{
+          if(same.checked){ r.dataset.prev = r.value || '50'; r.value='100'; r.disabled=true; if(n){n.value='100'; n.disabled=true;} updateMixLabel(); }
+          else{ r.disabled=false; if(n) n.disabled=false; r.value = r.dataset.prev || '50'; if(n) n.value = r.value; updateMixLabel(); }
+        });
+        if(same.checked){ r.value='100'; r.disabled=true; if(n){n.value='100'; n.disabled=true;} updateMixLabel(); }
+      }
+    }
+    bindMix();
+
+    // Hair attributes helpers (get/set + simple exclusivity)
+    function getHairAttrs(){ return Array.from(document.querySelectorAll('input[name="hairAttr"]:checked')).map(x=>x.value); }
+    function setHairAttrs(arr){ document.querySelectorAll('input[name="hairAttr"]').forEach(cb=>{ cb.checked = Array.isArray(arr) && arr.includes(cb.value); }); }
+    (function bindHairAttrs(){
+      const box = $('hairAttrs'); if(!box) return;
+      function uncheck(val){ const el = document.querySelector(`input[name="hairAttr"][value="${val}"]`); if(el) el.checked=false; }
+      box.addEventListener('change', (e)=>{
+        const t = e.target; if(!t || t.name!== 'hairAttr') return;
+        if(t.value==='wet' && t.checked){ uncheck('dry'); }
+        if(t.value==='dry' && t.checked){ uncheck('wet'); uncheck('oily'); }
+        if(t.value==='oily' && t.checked){ uncheck('dry'); }
+      });
+    })();
+
+    // Generate button
+    $('genBtn').addEventListener('click',()=>{
+      try{
+        const out = generatePrompt();
+        // do NOT auto-write seed back (keeps your manual control)
+        const bundle = {meta:{created:new Date().toISOString(),app:'Character-Builder-Demo by Silituz'},seed:out.seed,origin:{mother:out.metadata.mother,father:out.metadata.father},style:out.metadata, prompt:out.prompt, background: out.background, action: out.action}
+        $('promptPreview').textContent = JSON.stringify(bundle, null, 2);
+        // jump to Generate tab to show result
+        document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+        document.querySelector('.tab-btn[data-tab="generate"]').classList.add('active');
+        document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+        document.getElementById('generate').classList.add('active');
+      }catch(e){console.error(e);alert('Failed to generate prompt: '+e.message)}
+    })
+
+    $('copyBtn').addEventListener('click',()=>{const text = $('promptPreview').textContent || ''; if(!text) return; copyToClipboard(text);$('copyBtn').textContent='Copied!';setTimeout(()=>$('copyBtn').textContent='Copy',1200)})
+
+    // Export JSON
+    $('exportBtn').addEventListener('click',()=>{
+      const out = generatePrompt();
+      const bundle = {meta:{created:new Date().toISOString(),app:'Character-Builder-Demo by Silituz'},seed:out.seed,origin:{mother:out.metadata.mother,father:out.metadata.father},style:out.metadata, prompt:out.prompt, background: out.background, action: out.action}
+      download('character-prompt.json', JSON.stringify(bundle, null, 2));
+    })
+
+    // Presets
+    function loadPresets(){const raw = localStorage.getItem('cb_presets'); if(raw) state.presets = JSON.parse(raw); renderPresets()}
+    function savePresets(){localStorage.setItem('cb_presets', JSON.stringify(state.presets))}
+    function renderPresets(){const box=$('presets'); if(!box) return; box.innerHTML='';Object.entries(state.presets).forEach(([k,v])=>{const p=el('div',{class:'preset-item'});p.appendChild(el('div',{html:`<strong>${k}</strong><div class="muted" style="font-size:12px">${v.style} · ${v.gender}</div>`}));const load=el('button',{class:'small-btn'});load.textContent='Load';load.addEventListener('click',()=>{Object.entries(v).forEach(([kk,val])=>{if($(kk) && typeof val!=='object') $(kk).value = val}); if(v.mother && $('mom')) $('mom').value = v.mother; if(v.father && $('dad')) $('dad').value = v.father; if(v.dadSame!==undefined && $('dadSame')) { $('dadSame').checked = !!v.dadSame; $('dad').disabled = !!v.dadSame; }
+      state.tattoos=v.tattoos||[];state.piercings=v.piercings||[]; refreshLists(); refreshFemaleProps(); if(v.mixMom!==undefined && $('mixMom')){ $('mixMom').value = String(v.mixMom); if($('mixMomNum')) $('mixMomNum').value = String(v.mixMom); if(typeof updateMixLabel==='function') updateMixLabel(); }
+      if(v.hairAttrs && typeof setHairAttrs==='function'){ setHairAttrs(v.hairAttrs); }
+      });const del=el('button',{class:'small-btn danger'});del.textContent='Del';del.addEventListener('click',()=>{delete state.presets[k];savePresets();renderPresets()});p.appendChild(load);p.appendChild(del);box.appendChild(p)})}
+
+    $('savePreset').addEventListener('click',()=>{const name = prompt('Preset Name'); if(!name) return; const snapshot = {style:$('style').value,gender:$('gender').value,build:$('build').value,skinColor:$('skinColor').value,hairLength:$('hairLength').value,hairStyle:$('hairStyle').value,hairColor:$('hairColor').value,eyeLeftColor:$('eyeLeftColor').value,eyeRightColor:$('eyeRightColor').value,expression:$('expression').value,beard:$('beard').value,top:$('top').value,topColor:$('topColor').value,bottom:$('bottom').value,bottomColor:$('bottomColor').value,shoes:$('shoes').value,shoesColor:$('shoesColor').value,socks:$('socks').value,socksColor:$('socksColor').value,accessories:[$('accessory1').value,$('accessory2').value,$('accessory3').value],pose:$('pose').value,camera:$('camera').value,mood:$('mood').value,purpose:$('purpose').value,negative:$('negative').value,tattoos:state.tattoos,piercings:state.piercings,mother:$('mom').value,father:$('dad').value,dadSame:$('dadSame').checked,mixMom: ($('mixMom')? $('mixMom').value : '50'), hairAttrs: (typeof getHairAttrs==='function'? getHairAttrs():[]), femaleProps:{preset:$('fPreset').value,bust:$('fBust').value,waist:$('fWaist').value,hips:$('fHips').value,shoulders:$('fShoulders').value}}
+      state.presets[name] = snapshot; savePresets(); renderPresets();
+    })
+    $('loadPreset').addEventListener('click',()=>{loadPresets();alert('Presets loaded (below). Click "Load" on the preset you want.')})
+
+    // Reset button
+const __resetBtn = $('resetBtn');
+if(__resetBtn){ __resetBtn.addEventListener('click',()=>{
+      if(!confirm('Reset all fields and temporary references? Presets will remain.')) return;
+      const defaults = {seed:'',style:'Photorealistic',mom:'None',dad:'None',dadSame:false,gender:'Man',build:'average',skinColor:'#fdebd0',hairLength:'medium',hairStyle:'',hairColor:'#2b2b2b',eyeLeftColor:'#6b8cff',eyeRightColor:'#6b8cff',expression:'neutral',beard:'none',top:'Leather jacket',topColor:'#222222',bottom:'Jeans',bottomColor:'#1a1a1a',shoes:'Boots',shoesColor:'#2b2b2b',socks:'none',socksColor:'#222222',accessory1:'None',accessory2:'None',accessory3:'None',pose:'Standing, 3/4',camera:'Full-body, 35mm',mood:'Neutral soft',purpose:'Character only',negative:'',fPreset:'custom',fBust:'M',fWaist:'average',fHips:'wide',fShoulders:'average'};
+      Object.entries(defaults).forEach(([k,v])=>{if($(k)) $(k).value = v});
+      if($('mom')) $('mom').value = defaults.mom;
+      if($('dad')) { $('dad').value = defaults.dad; $('dad').disabled = defaults.dadSame }
+      if($('mixMom')) { $('mixMom').disabled = $('dadSame') && $('dadSame').checked; $('mixMom').value = ($('dadSame') && $('dadSame').checked) ? '100' : '50'; }
+      if($('mixMomNum')) $('mixMomNum').value = $('mixMom')? $('mixMom').value : '50';
+      if(typeof updateMixLabel==='function') updateMixLabel();
+      if($('dadSame')) $('dadSame').checked = defaults.dadSame;
+      state.tattoos = []; state.piercings = []; refreshLists(); populateHairStyles(); refreshFemaleProps(); if(typeof setHairAttrs==='function') setHairAttrs([]); $('promptPreview').textContent='(nothing generated yet)';
+    })}
+
+    // small behaviors
+    $('skinPreset').addEventListener('change',e=>{$('skinColor').value = e.target.value; $('skinColorText').value = e.target.value})
+
+    // wire color inputs (ensure pairs linked)
+    ['skinColor','hairColor','eyeLeftColor','eyeRightColor','topColor','bottomColor','shoesColor','socksColor'].forEach(id=>{
+      const input = $(id); const text = $(id+'Text'); if(!input || !text) return;
+      input.addEventListener('input',()=>{text.value = input.value});
+      text.addEventListener('input',()=>{ if(/^#([0-9a-fA-F]{6})$/.test(text.value)){ input.value = text.value } });
+    });
+
+    loadPresets(); refreshLists();
+  </script>
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function el(tag, attrs){ const n=document.createElement(tag); if(attrs){ for(const k in attrs){ if(k==='text') n.textContent=attrs[k]; else if(k==='html') n.innerHTML=attrs[k]; else n.setAttribute(k,attrs[k]); } } return n; }
+  if(typeof populateHairStyles!=='function'){ return; }
+  const map = {
+    'Glatze': ['None'],
+    'Kurz': ['Buzzcut','#1 Clip','Skin Fade','Temple Fade','Crew Cut','French Crop','Short Quiff','Short Spiky','Side Part','Buzzed Caesar'],
+    'Mittel': ['Natural Waves','Middle Part','Tousled Layers','Wolf Cut (Medium)','Slick Back (Medium)','Curtain Bangs','Shag (Medium)','Shoulder Flip'],
+    'Schulterhöhe': ['Shoulder-length Straight','Shoulder Waves','Shoulder Shag','Shoulder Bob','Half-up Shoulder','Low Pony Shoulder'],
+    'Lang': ['Straight Layers','Beach Waves','Layered Shag','Half-up','Low Pony','High Pony','Loose Curls','Long Curtain','Braided Half-up'],
+    'Extra Lang': ['Silky Straight XL','Big Curls XL','Boho Waves XL','Layer Cascade XL','Princess Braid XL','Rapunzel Braid','High Pony XL','Low Pony XL']
+  };
+  const orig = populateHairStyles;
+  window.populateHairStyles = function(){
+    orig();
+    try{
+      const len = $('hairLength') ? $('hairLength').value : 'Mittel';
+      const sel = $('hairStyle'); if(!sel) return;
+      const list = map[len] || map['Mittel'];
+      sel.innerHTML = '';
+      list.forEach(name=>{ const o = el('option'); o.textContent = name; sel.appendChild(o); });
+    }catch(e){ console.warn('hair style override failed', e); }
+  };
+  document.addEventListener('DOMContentLoaded', ()=>{ try{ populateHairStyles(); }catch{} });
+})();
+</script>
+
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function el(tag, attrs){ const n=document.createElement(tag); if(attrs){ for(const k in attrs){ if(k==='text') n.textContent=attrs[k]; else if(k==='html') n.innerHTML=attrs[k]; else n.setAttribute(k,attrs[k]); } } return n; }
+  document.addEventListener('DOMContentLoaded', function(){
+    const styleSel = $('hairStyle'); const lenSel = $('hairLength');
+    if(!styleSel || !lenSel) return;
+    let wrap = $('hairAttrWrap');
+    if(!wrap){
+      wrap = el('div',{id:'hairAttrWrap'});
+      wrap.style.marginTop='8px';
+      wrap.innerHTML = '<label style="display:block;margin-bottom:6px">Hair Attributes</label><div id="hairAttrBox" style="display:flex;flex-wrap:wrap;gap:6px"></div>';
+      const parent = styleSel.parentElement?.parentElement || styleSel.parentElement;
+      parent && parent.after(wrap);
+    }
+    const box = $('hairAttrBox');
+    const types = ['Typ 1A','Typ 1B','Typ 1C','Typ 2A','Typ 2B','Typ 2C','Typ 3A','Typ 3B','Typ 3C','Typ 4A','Typ 4B','Typ 4C'];
+    const extras = ['Porös','Nass','Trocken','Shiny','Damaged','Frizzy','Splissig','Fettig'];
+    function chip(name){
+      const lbl = el('label', { class:'chip hair-attr' });
+      lbl.style.display='inline-flex'; lbl.style.alignItems='center'; lbl.style.gap='6px'; lbl.style.padding='6px 10px'; lbl.style.border='1px solid rgba(255,255,255,0.12)'; lbl.style.borderRadius='999px'; lbl.style.cursor='pointer'; lbl.style.userSelect='none'; lbl.style.fontSize='12px';
+      const cb = el('input', { type:'checkbox', value:name });
+      cb.style.accentColor='currentColor';
+      const span = el('span', { text:name });
+      lbl.appendChild(cb); lbl.appendChild(span);
+      return lbl;
+    }
+    if(box && !box.childElementCount){
+      types.forEach(t=> box.appendChild(chip(t)));
+      box.appendChild(el('span',{text:' '}));
+      extras.forEach(t=> box.appendChild(chip(t)));
+    }
+    window.getHairAttrs = function(){
+      const arr=[]; document.querySelectorAll('#hairAttrBox input[type="checkbox"]').forEach(cb=>{ if(cb.checked) arr.push(cb.value); });
+      return arr;
+    };
+    window.setHairAttrs = function(list){
+      const want = new Set(list||[]);
+      document.querySelectorAll('#hairAttrBox input[type="checkbox"]').forEach(cb=> cb.checked = want.has(cb.value));
+    };
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function el(tag, attrs){ const n=document.createElement(tag); if(attrs){ for(const k in attrs){ if(k==='text') n.textContent=attrs[k]; else if(k==='html') n.innerHTML=attrs[k]; else n.setAttribute(k,attrs[k]); } } return n; }
+  document.addEventListener('DOMContentLoaded', function(){
+    function groupize(selectId, rules, extraGroups, addSwim=false){
+      const sel = $(selectId); if(!sel) return;
+      const items = Array.from(sel.options).map(o=>o.text).filter(Boolean);
+      sel.innerHTML = '';
+      function makeGroup(label){ const og = document.createElement('optgroup'); og.label=label; sel.appendChild(og); return og; }
+      const groups = { 'Spring':makeGroup('Spring'), 'Summer':makeGroup('Summer'), 'Autumn':makeGroup('Autumn'), 'Winter':makeGroup('Winter') };
+      const swim = addSwim ? makeGroup('Swimwear & Underwear') : null;
+      const legacy = makeGroup('All Seasons (legacy)');
+      // Existing classify
+      items.forEach(txt=>{
+        let placed = false; const low = txt.toLowerCase();
+        for(const g in rules){
+          if(rules[g].some(k=> low.includes(k))){ (groups[g]||legacy).appendChild(el('option',{text:txt})); placed=true; break; }
+        }
+        if(!placed && swim && ['bikini','bra','brief','boxer','trunk','thong','panty','underwear','lingerie','stocking','tights'].some(k=> low.includes(k))){
+          swim.appendChild(el('option',{text:txt})); placed=true;
+        }
+        if(!placed) legacy.appendChild(el('option',{text:txt}));
+      });
+      (extraGroups||[]).forEach(({season, list})=>{
+        const g = (season==='Swim') ? swim : groups[season] || legacy;
+        list.forEach(txt=>{ if(g && !Array.from(g.querySelectorAll('option')).some(o=>o.text===txt)) g.appendChild(el('option',{text:txt})); });
+      });
+    }
+
+    const rulesTop = {
+      'Summer':['tee','tank','hawaiian','crop','singlet','sleeveless','bikini','bra','swim'],
+      'Spring':['denim','oxford','cardigan','windbreaker','light','shirt','blouse','polo'],
+      'Autumn':['flannel','knit','sweater','bomber','trench','jacket','hoodie','pullover'],
+      'Winter':['puffer','parka','wool coat','thermal','down','fleece','turtleneck']
+    };
+    const rulesBottom = {
+      'Summer':['short','skirt','tennis','mini','bikini','thong','swim','boardshort'],
+      'Spring':['chino','light jean','jogger','pleated','skirt','culotte'],
+      'Autumn':['dark jean','corduroy','wool','cargo','slacks'],
+      'Winter':['thermal','snow','heavy','fleece','wool','quilted']
+    };
+    const rulesShoes = {
+      'Summer':['flip flop','sandal','slide','barefoot','espadrille','mule','clog'],
+      'Spring':['samba','force','converse','loafer','sneaker','runner','court'],
+      'Autumn':['martens','chelsea','550','boot','desert','hiker'],
+      'Winter':['timberland','snow boot','hiking','insulated','lined','lug']
+    };
+    const rulesSocks = {
+      'Summer':['no socks','invisible','light','ankle','liner','fishnet'],
+      'Spring':['no-show','low ankle','crew','quarter'],
+      'Autumn':['thick','wool','knit','stocking','opaque'],
+      'Winter':['thermal','merino','heated','knee','thigh-high','fleece-lined']
+    };
+
+    groupize('top', rulesTop, [
+      {season:'Spring', list:['Light Hoodie','Denim Jacket','Cardigan','Windbreaker','Oxford Shirt','Blouse','Polo Shirt','Light Bomber']},
+      {season:'Summer', list:['Graphic Tee','Tank Top','Hawaiian Shirt','Crop Top','Sports Bra','Bikini Top (Triangle)','Bikini Top (Halter)','Micro Bikini Top','Corset Top','Lace Bralette','Mesh Crop Top']},
+      {season:'Autumn', list:['Flannel Shirt','Knit Sweater','Bomber Jacket','Light Trench Coat','Sweatshirt','Hoodie','Long Cardigan','Denim Overshirt']},
+      {season:'Winter', list:['Puffer Jacket','Parka','Wool Coat','Thermal Top','Turtleneck Sweater','Fleece Jacket','Down Jacket','Quilted Jacket']},
+      {season:'Swim', list:['One‑Piece Swimsuit','Triangle Bikini Top','String Bikini Top']}
+    ], true);
+
+    groupize('bottom', rulesBottom, [
+      {season:'Spring', list:['Chinos','Light Jeans','Pleated Skirt','Joggers','Midi Skirt','Culottes']},
+      {season:'Summer', list:['Denim Shorts','Cargo Shorts','Athletic Shorts','Tennis Skirt','Bikini Bottom (Classic)','Bikini Bottom (High‑cut)','Micro Bikini Bottom','Thong','Sarong','String Bikini Bottom']},
+      {season:'Autumn', list:['Dark Jeans','Corduroy Pants','Wool Skirt','Cargo Pants','Pleated Trousers','Leather Skirt']},
+      {season:'Winter', list:['Thermal Leggings','Snow Pants','Heavy Wool Trousers','Fleece Joggers','Quilted Skirt','Fleece-lined Leggings']},
+      {season:'Swim', list:['Boyshorts','Lace Panties','Seamless Panties','Boxers','Boxer Briefs','Briefs','Trunks','Compression Shorts']}
+    ], true);
+
+    groupize('shoes', rulesShoes, [
+      {season:'Spring', list:['Nike Air Force 1','Adidas Samba','Converse Chuck 70','Loafers','Adidas Campus','New Balance 327','Vans Old Skool','Court Sneakers']},
+      {season:'Summer', list:['Barefoot','Slides','Sandals','Flip Flops','Espadrilles','Mules','Clogs','Beach Sandals']},
+      {season:'Autumn', list:['Dr. Martens 1460','Chelsea Boots','New Balance 550','Desert Boots','High‑top Sneakers','Hiking Shoes','Chukka Boots']},
+      {season:'Winter', list:['Timberland 6‑inch Boots','Snow Boots','Hiking Boots','Insulated Boots','Winter Runners','Lug Boots','Fur-lined Boots']},
+    ], false);
+
+    groupize('socks', rulesSocks, [
+      {season:'Spring', list:['No‑Show Socks','Low Ankle Socks','Crew Socks','Quarter Socks']},
+      {season:'Summer', list:['No Socks','Invisible Socks','Light Crew Socks','Ankle Socks','Fishnet Socks','Liner Socks']},
+      {season:'Autumn', list:['Thick Crew Socks','Wool Crew Socks','Knit Socks','Stockings','Opaque Tights']},
+      {season:'Winter', list:['Thermal Crew Socks','Merino Knee‑High','Heated Socks','Knee‑High Socks','Thigh‑High Socks','Fleece‑Lined Tights']},
+      {season:'Swim', list:['Sheer Stockings','Fishnet Tights']}
+    ], true);
+
+    // Accessories big list and append
+    (function accessories(){
+      const bigList = [
+        'Glasses (Round)','Glasses (Square)','Sunglasses','Aviator Sunglasses','Cycling Glasses','Eyepatch','Monocle',
+        'Hairpin','Ribbon','Headband','Bandana','Beanie','Cap','Beret','Fedora','Bucket Hat','Hood','Visor',
+        'Face Mask','Kitsune Mask','Medical Mask','Scarf','Choker','Necklace (Pendant)','Pearl Necklace','Chain Necklace','Rosary',
+        'Earrings (Stud)','Earrings (Hoop)','Earrings (Drop)','Multiple Earrings','Nose Ring','Septum Ring','Industrial Bar','Helix Ring',
+        'Bracelet (Leather)','Bracelet (Beads)','Wristband','Watch','Smartwatch','Rings (Multiple)','Gloves (Leather)','Gloves (Fingerless)','Arm Warmers','Elbow Pads',
+        'Backpack','Shoulder Bag','Messenger Bag','Fanny Pack','Belt','Suspenders','Armband','Anklet','Brooch','Tie','Bow Tie','Pocket Square',
+        'Hair Clips','Scrunchie','Veil','Tiara','Headphones','Earbuds','Microphone Headset','Guitar Strap','Keychain Clip'
+      ];
+      ['accessory1','accessory2','accessory3'].forEach(id=>{
+        const sel = $(id); if(!sel) return;
+        const have = new Set(Array.from(sel.options).map(o=>o.text));
+        bigList.forEach(x=>{ if(!have.has(x)){ const o = document.createElement('option'); o.textContent = x; sel.appendChild(o);} });
+      });
+    })();
+
+    // Background presets
+    (function backgrounds(){
+      const sel = $('bgPreset'); if(!sel) return;
+      const list = [
+        'City Night Neon','Cyberpunk Alley','Shinto Shrine','Samurai Dojo Interior','Tatami Room',
+        'Japanese Festival (Matsuri)','Cherry Blossom Park','Bamboo Grove','Zen Garden','Temple Gate (Torii)',
+        'Rooftop at Sunset','School Classroom','Arcade','Karaoke Room','Idol Stage','Recording Studio',
+        'Bar Interior (Izakaya)','Coffee Shop Cozy','Onsen (Hot Spring) Night','Rainy Street','Snowy Mountain',
+        'Forest Glade','Beach Sunset','Aquarium Tunnel','Library','Office','Hospital Corridor',
+        'Sci‑Fi Spaceship Bridge','Mecha Hangar','Gothic Cathedral','Castle Courtyard','Medieval Market',
+        'Ancient Dojo Courtyard','Shogun Fortress Throne','Underwater Ruins','Volcanic Crater','Aurora Night Sky',
+        'City Rooftop Garden','Subway Platform','Shibuya Crossing','Narrow Old Town Street','Riverbank Sakura',
+        'Bamboo Forest Path','Mountain Shrine Steps','Neon Arcade Alley','Abandoned Warehouse','Futuristic Lab'
+      ];
+      const have = new Set(Array.from(sel.options).map(o=>o.text));
+      list.forEach(x=>{ if(!have.has(x)){ const o = document.createElement('option'); o.textContent = x; sel.appendChild(o);} });
+    })();
+
+    // Mix label sync (robust)
+    (function mixLabel(){
+      const slider = $('mixMom'), num = $('mixMomNum'), lbl = $('mixLabel');
+      function upd(){ if(!slider||!num||!lbl) return; const m=parseInt(slider.value||'50',10); lbl.textContent = `Mom ${m}% · Dad ${100-m}%`; num.value = m; if(typeof updateMixLabel==='function') updateMixLabel(); }
+      if(slider){ slider.addEventListener('input', upd); }
+      if(num){ num.addEventListener('input', ()=>{ if(slider){ slider.value = num.value; } upd(); }); }
+      upd();
+    })();
+
+    // Accessory color pickers (if not present)
+    (function accColors(){
+      function addColor(selId, colorId, textId){
+        const sel = $(selId); if(!sel) return;
+        if($(colorId)) return;
+        const wrap = document.createElement('div'); wrap.className='color-control'; wrap.style.display='flex'; wrap.style.gap='8px'; wrap.style.marginTop='6px';
+        const c = document.createElement('input'); c.type='color'; c.id = colorId; c.value='#ffffff';
+        const t = document.createElement('input'); t.type='text'; t.id = textId; t.value='#ffffff'; t.placeholder='#RRGGBB'; t.style.minWidth='100px';
+        wrap.appendChild(c); wrap.appendChild(t); sel.parentElement && sel.parentElement.appendChild(wrap);
+        function syncToText(){ t.value = c.value.toUpperCase(); }
+        function syncToColor(){ if(/^#([0-9A-Fa-f]{6})$/.test(t.value)) c.value = t.value.toUpperCase(); }
+        c.addEventListener('input', syncToText); t.addEventListener('input', syncToColor); syncToText();
+      }
+      addColor('accessory1','accessory1Color','accessory1ColorText');
+      addColor('accessory2','accessory2Color','accessory2ColorText');
+      addColor('accessory3','accessory3Color','accessory3ColorText');
+    })();
+
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function ensureHairMappingMerge(){
+    if(typeof populateHairStyles!=='function') return;
+    const orig = populateHairStyles;
+    window.populateHairStyles = function(){
+      orig();
+      try{
+        const lenSel = $('hairLength'), styleSel = $('hairStyle');
+        if(!lenSel || !styleSel) return;
+        const len = lenSel.value;
+        const mapping = {"Glatze": ["None"], "Kurz": ["Buzzcut", "#1 Clip", "Skin Fade", "Temple Fade", "Crew Cut", "French Crop", "Short Quiff", "Short Spiky", "Side Part", "Buzzed Caesar", "Textured Buzz", "Ivy League", "Short Pompadour"], "Mittel": ["Natural Waves", "Middle Part", "Tousled Layers", "Wolf Cut (Medium)", "Slick Back (Medium)", "Curtain Bangs", "Shag (Medium)", "Shoulder Flip", "Classic Bob", "Wavy Bob", "Layered Bob"], "Schulterhöhe": ["Shoulder-length Straight", "Shoulder Waves", "Shoulder Shag", "Shoulder Bob", "Half-up Shoulder", "Low Pony Shoulder", "Textured Lob", "Blunt Lob", "Shaggy Lob"], "Lang": ["Straight Layers", "Beach Waves", "Layered Shag", "Half-up", "Low Pony", "High Pony", "Loose Curls", "Long Curtain", "Braided Half-up", "French Braid", "Dutch Braid", "Fishtail Braid"], "Extra Lang": ["Silky Straight XL", "Big Curls XL", "Boho Waves XL", "Layer Cascade XL", "Princess Braid XL", "Rapunzel Braid", "High Pony XL", "Low Pony XL", "Crown Braid", "Box Braids", "Cornrows"]};
+        const addList = mapping[len] || [];
+        const have = new Set(Array.from(styleSel.options).map(o=>o.text));
+        addList.forEach(name=>{
+          if(!have.has(name)){
+            const o = document.createElement('option'); o.textContent = name; styleSel.appendChild(o);
+            have.add(name);
+          }
+        });
+        if(len === 'Glatze'){
+          styleSel.innerHTML = '<option>None</option>';
+        }
+      }catch(e){ console.warn('hairstyle merge failed', e); }
+    };
+    try{ window.populateHairStyles(); }catch(e){}
+  }
+  if(document.readyState !== 'loading') ensureHairMappingMerge();
+  else document.addEventListener('DOMContentLoaded', ensureHairMappingMerge);
+})();
+</script>
+
+
+<script>
+(function(){
+  function dedupHairAttrs(){
+    const box = document.getElementById('hairAttrBox'); if(!box) return;
+    const seen = new Set(); const rem = [];
+    box.querySelectorAll('label.hair-attr').forEach(lbl=>{
+      const txt = (lbl.textContent || '').trim();
+      if(seen.has(txt)) rem.push(lbl); else seen.add(txt);
+    });
+    rem.forEach(n=> n.remove());
+  }
+  if(document.readyState!=='loading') dedupHairAttrs();
+  else document.addEventListener('DOMContentLoaded', dedupHairAttrs);
+})();
+</script>
+
+
+<script>
+(function(){
+  function el(tag, attrs){ const n=document.createElement(tag); if(attrs){ for(const k in attrs){ if(k==='text') n.textContent=attrs[k]; else n.setAttribute(k, attrs[k]); } } return n; }
+  function ensureHairAttrSet(){
+    const box = document.getElementById('hairAttrBox'); if(!box) return;
+    const want = ["Typ 1A", "Typ 1B", "Typ 1C", "Typ 2A", "Typ 2B", "Typ 2C", "Typ 3A", "Typ 3B", "Typ 3C", "Typ 4A", "Typ 4B", "Typ 4C", "Porös", "Nass", "Trocken", "Shiny", "Damaged", "Frizzy", "Splissig", "Fettig"];
+    const have = new Set(Array.from(box.querySelectorAll('label.hair-attr')).map(n=>n.textContent.trim()));
+    want.forEach(name=>{
+      if(!have.has(name)){
+        const lbl = el('label', { class:'hair-attr' });
+        lbl.style.display='inline-flex'; lbl.style.alignItems='center'; lbl.style.gap='6px';
+        lbl.style.padding='6px 10px'; lbl.style.border='1px solid rgba(255,255,255,0.12)'; lbl.style.borderRadius='999px';
+        const cb = el('input', { type:'checkbox' }); cb.value = name; lbl.appendChild(cb);
+        const span = el('span'); span.textContent = name; lbl.appendChild(span);
+        box.appendChild(lbl);
+      }
+    });
+  }
+  if(document.readyState!=='loading') ensureHairAttrSet();
+  else document.addEventListener('DOMContentLoaded', ensureHairAttrSet);
+})();
+</script>
+
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  const mapping = {"Bald": ["None"], "Short": ["Buzzcut", "#1 Clip", "#2 Clip", "Skin Fade", "Temple Fade", "Crew Cut", "French Crop", "Short Quiff", "Short Spiky", "Side Part", "Buzzed Caesar", "Ivy League", "Short Pompadour", "Textured Crop", "Classic Taper", "High & Tight"], "Medium": ["Natural Waves", "Middle Part", "Tousled Layers", "Wolf Cut (Medium)", "Slick Back (Medium)", "Curtain Bangs", "Shag (Medium)", "Medium Bob", "Wavy Bob", "Layered Bob", "Blowout", "Medium Mullet", "Messy Quiff (Medium)"], "Shoulder-length": ["Shoulder-length Straight", "Shoulder Waves", "Shoulder Shag", "Shoulder Bob", "Textured Lob", "Blunt Lob", "Shaggy Lob", "Half-up (Shoulder)", "Low Pony (Shoulder)", "Butterfly Cut", "Italian Bob"], "Long": ["Straight Layers", "Beach Waves", "Layered Shag", "Half-up", "Low Pony", "High Pony", "Loose Curls", "Long Curtain", "Braided Half-up", "French Braid", "Dutch Braid", "Fishtail Braid", "Waterfall Braid", "Long Mullet", "Sleek Straight (Long)"], "Extra Long": ["Silky Straight XL", "Big Curls XL", "Boho Waves XL", "Layer Cascade XL", "Princess Braid XL", "Rapunzel Braid", "High Pony XL", "Low Pony XL", "Crown Braid", "Box Braids", "Cornrows", "Goddess Braids"]};
+  function applyMerge(){
+    const lenSel = $('hairLength'), styleSel = $('hairStyle');
+    if(!lenSel || !styleSel) return;
+    const len = lenSel.value;
+    if(len === 'Bald'){
+      styleSel.innerHTML = '<option>None</option>';
+      return;
+    }
+    const addList = mapping[len] || [];
+    const have = new Set(Array.from(styleSel.options).map(o=>o.text));
+    addList.forEach(name=>{
+      if(!have.has(name)){
+        const o = document.createElement('option'); o.textContent = name; styleSel.appendChild(o);
+        have.add(name);
+      }
+    });
+  }
+  function attach(){
+    const lenSel = $('hairLength'); if(!lenSel) return;
+    // Run after original handlers
+    lenSel.addEventListener('change', ()=> setTimeout(applyMerge, 0));
+    // Initial run after initial population
+    setTimeout(applyMerge, 0);
+  }
+  if(document.readyState!=='loading') attach();
+  else document.addEventListener('DOMContentLoaded', attach);
+})();
+</script>
+
+
+<!-- Creator Links (glass + neon + reveal + pulse) -->
+<style>
+  /* glass card */
+  #creator-links-card{
+    border-radius:16px; padding:16px; margin-top:16px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+    backdrop-filter:blur(10px);
+
+    /* REVEAL: initial state */
+    opacity:0; transform:translateY(12px) scale(.98); filter:blur(4px);
+    transition:
+      opacity .55s ease,
+      transform .60s cubic-bezier(.2,.8,.2,1),
+      filter .60s ease;
+  }
+  /* revealed */
+  #creator-links-card.is-revealed{ opacity:1; transform:none; filter:none; }
+
+  /* centered layout */
+  #creator-links-card.center{
+    max-width:760px; margin:36px auto 0; text-align:center;
+  }
+  #creator-links-card .title{ font-weight:700; font-size:20px; margin-bottom:8px; }
+  #creator-links-card .sub{ font-size:14.5px; opacity:.9; margin-bottom:14px; line-height:1.42; }
+  #creator-links-card .btns{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+
+  /* pill buttons (dark text by default for readability) */
+  .cta-btn{
+    --ring: rgba(0,0,0,.25);
+    --pulseA: #ffffff; /* will be overridden per button */
+    --pulseB: #ffffff; /* will be overridden per button */
+    text-decoration:none; padding:14px 20px; border-radius:9999px;
+    font-weight:800; display:inline-flex; align-items:center; gap:8px;
+    letter-spacing:.2px; color:#ffffff;
+    background:rgba(255,255,255,.10);
+    border:1.5px solid var(--ring);
+    transition:transform .12s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease, filter .2s ease, color .2s ease;
+    backdrop-filter:blur(6px); will-change:transform, filter;
+  }
+  .cta-btn:hover{ transform:translateY(-1px) scale(1.02); }
+
+  /* TikTok gradient + neon glow */
+  .cta-btn--tiktok{
+    --pulseA:#EE1D52; --pulseB:#69C9D0;
+    background:linear-gradient(135deg, rgba(105,201,208,.12), rgba(238,29,82,.12));
+    border-color:rgba(238,29,82,.55);
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+  .cta-btn--tiktok:hover{
+    background:linear-gradient(135deg, #69C9D0, #EE1D52);
+    color:#0b0b0b;
+    box-shadow:0 0 10px #EE1D52, 0 0 22px #69C9D0, 0 8px 26px rgba(0,0,0,.40);
+    filter:saturate(1.15);
+  }
+
+  /* Linktr.ee glass + neon ring on hover */
+  .cta-btn--linktree{
+    --pulseA:#39E09B; --pulseB:#00D46A;
+    background:linear-gradient(135deg, rgba(57,224,155,.12), rgba(0,212,106,.12));
+    border-color:rgba(57,224,155,.65);
+    box-shadow:0 6px 18px rgba(0,0,0,.45);
+  }
+  .cta-btn--linktree:hover,
+  .cta-btn--linktree:focus-visible{
+    background:linear-gradient(135deg, #39E09B, #00D46A);
+    color:#0b0b0b;
+    border-color:#00D46A;
+    box-shadow:
+      0 0 0 2px rgba(0,212,106,.95),  /* neon ring */
+      0 0 12px #39E09B,
+      0 0 24px #00D46A,
+      0 10px 28px rgba(0,0,0,.50);
+    filter:saturate(1.1);
+    outline:none;
+  }
+
+  /* Neon PULSE (runs 3x on reveal) */
+  @keyframes neonPulse {
+    0%   { box-shadow:0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0); transform:scale(1); }
+    40%  { box-shadow:
+              0 0 0 2px var(--pulseB),
+              0 0 10px var(--pulseA),
+              0 0 22px var(--pulseB),
+              0 8px 26px rgba(0,0,0,.40);
+           transform:scale(1.03); }
+    100% { box-shadow:0 0 0 0 rgba(0,0,0,0), 0 0 0 0 rgba(0,0,0,0); transform:scale(1); }
+  }
+  .cta-btn.pulse{ animation: neonPulse 1.6s ease-out 0s 3; }
+
+  /* Motion sensitivity */
+  @media (prefers-reduced-motion: reduce){
+    #creator-links-card{ opacity:1; transform:none; filter:none; transition:none; }
+    .cta-btn:hover{ transform:none; }
+    .cta-btn.pulse{ animation:none; }
+  }
+</style>
+
+<div class="card center" id="creator-links-card">
+  <div class="title">Follow me &amp; tune in 👇</div>
+  <div class="sub">
+    TikTok is my main account where I post <strong>videos</strong> and introduce new <strong>tracks</strong>.<br>
+    You can listen on <strong>Spotify</strong>, <strong>Apple Music</strong>, <strong>Amazon Music</strong> and <strong>30+ other platforms</strong>.<br>
+    Find everything <strong>and more</strong> in my Linktr.ee 😉
+  </div>
+
+  <div class="btns">
+    <a class="cta-btn cta-btn--tiktok" href="https://tiktok.com/@silituz" target="_blank" rel="noopener noreferrer">
+      <span>🎬</span><span>TikTok (main account)</span>
+    </a>
+    <a class="cta-btn cta-btn--linktree" href="https://linktr.ee/silituz" target="_blank" rel="noopener noreferrer">
+      <span>🌳</span><span>Linktr.ee – music &amp; more</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  // Reveal + pulse on scroll (once)
+  (function(){
+    const card = document.getElementById('creator-links-card');
+    const tiktok = card?.querySelector('.cta-btn--tiktok');
+    const linktr = card?.querySelector('.cta-btn--linktree');
+    function runPulse(){
+      if(tiktok){ tiktok.classList.add('pulse'); tiktok.addEventListener('animationend', ()=> tiktok.classList.remove('pulse'), {once:true}); }
+      if(linktr){ setTimeout(()=>{ linktr.classList.add('pulse'); linktr.addEventListener('animationend', ()=> linktr.classList.remove('pulse'), {once:true}); }, 120); }
+    }
+    if(!('IntersectionObserver' in window) || !card){
+      card?.classList.add('is-revealed'); runPulse(); return;
+    }
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          card.classList.add('is-revealed');
+          runPulse();
+          io.unobserve(card);
+        }
+      });
+    }, { threshold: 0.2 });
+    io.observe(card);
+  })();
+</script>
+
+</body>
+</html>
